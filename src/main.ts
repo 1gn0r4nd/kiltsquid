@@ -1,15 +1,37 @@
-import { SubstrateBatchProcessor } from '@subsquid/substrate-processor'
+import {
+  SubstrateBatchProcessor,
+  SubstrateBatchProcessorFields,
+  DataHandlerContext
+} from '@subsquid/substrate-processor'
 import { TypeormDatabase } from '@subsquid/typeorm-store'
 import { lookupArchive } from '@subsquid/archive-registry'
 // import * as usdtAbi from './abi/usdt'
+import {events} from './types'
 import { Transfer } from './model'
 
+
 const processor = new SubstrateBatchProcessor()
-  .setGateway(lookupArchive('kilt'))
+  .setGateway(lookupArchive('kilt', {release: 'ArrowSquid'}))
   .setRpcEndpoint({
     // set RPC endpoint in .env
     url: process.env.RPC_KILT_WSS,
     rateLimit: 10
+  })
+  .setBlockRange({ from: 1 })
+  .addEvent({
+    name: [
+      events.balances.transfer.name
+    ],
+    call: true,
+    extrinsic: true
+  })
+  .setFields({
+    extrinsic: {
+      hash: true
+    },
+    block: {
+      timestamp: true
+    }
   })
   // .setFinalityConfirmation(75) // 15 mins to finality
   // .addLog({

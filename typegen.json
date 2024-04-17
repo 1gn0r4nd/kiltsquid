@@ -1,0 +1,32 @@
+{
+  "outDir": "src/types",
+  "specVersions": "https://v2.archive.subsquid.io/metadata/kilt",
+  "pallets": {
+    "Balances": {
+      "events": [
+        "Transfer"
+      ],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "Did": {
+      "events": [
+        "DidCreated",
+        "DidUpdated",
+        "DidDeleted"
+      ]
+    },
+    "Ctype": {
+      "events": [
+        "CTypeCreated",
+        "CTypeUpdated"
+      ]
+    },
+    "Attestation": {
+      "events": [
+
+      ]
+    }
+  }
+}

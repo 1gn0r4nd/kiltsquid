@@ -19,7 +19,7 @@ type Transfer @entity {
   id: ID!
   from: Account! @index # TODO relation(name: "OutgoingTransfers")
   to: Account! @index   # TODO relation(name: "IncomingTransfers")
-  value: BigInt!
+  amount: BigInt!
   fee: BigInt! # fee is calculated at the best effort and may be zero for some old extrinsics
   blockNumber: BigInt! @index
   extrinsic: Extrinsic!
