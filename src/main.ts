@@ -3,55 +3,121 @@ import {
   SubstrateBatchProcessorFields,
   DataHandlerContext
 } from '@subsquid/substrate-processor'
-import { TypeormDatabase } from '@subsquid/typeorm-store'
-import { lookupArchive } from '@subsquid/archive-registry'
+import {In} from 'typeorm'
+import * as ss58 from '@subsquid/ss58'
+import {TypeormDatabase, Store} from '@subsquid/typeorm-store'
+import assert from 'assert'
 // import * as usdtAbi from './abi/usdt'
+import {processor, ProcessorContext} from './processor'
+import {Account, Transfer} from './model'
 import {events} from './types'
-import { Transfer } from './model'
 
 
-const processor = new SubstrateBatchProcessor()
-  .setGateway(lookupArchive('kilt', {release: 'ArrowSquid'}))
-  .setRpcEndpoint({
-    // set RPC endpoint in .env
-    url: process.env.RPC_KILT_WSS,
-    rateLimit: 10
-  })
-  .setBlockRange({ from: 1 })
-  .addEvent({
-    name: [
-      events.balances.transfer.name
-    ],
-    call: true,
-    extrinsic: true
-  })
-  .setFields({
-    extrinsic: {
-      hash: true
-    },
-    block: {
-      timestamp: true
-    }
-  })
-  // .setFinalityConfirmation(75) // 15 mins to finality
-  // .addLog({
-  //   address: [ '0xdAC17F958D2ee523a2206206994597C13D831ec7' ],
-  //   topic0: [ usdtAbi.events.Transfer.topic ]
-  // })
-const db = new TypeormDatabase()
+const db = new TypeormDatabase({supportHotBlocks: true})
 
 processor.run(db, async ctx => {
-  const transfers: Transfer[] = []
-  for (let block of ctx.blocks) {
-    console.log(block)
-    // for (let log of block.logs) {
-    //   console.log(log)
-      // let {from, to, value} = usdtAbi.events.Transfer.decode(log)
-      // transfers.push(new Transfer({
-      //   id: log.id,
-      //   from, to, value
-      // }))
-    // }
-  }
+  let transferEvents: TransferEvent[] = getTransferEvents(ctx)
+
+  let accounts: Map<string, Account> = await createAccounts(ctx, transferEvents)
+  let transfers: Transfer[] = createTransfers(transferEvents, accounts)
+
+  await ctx.store.upsert([...accounts.values()])
   await ctx.store.insert(transfers)
 })
+
+interface TransferEvent {
+  id: string
+  blockNumber: number
+  timestamp: Date
+  extrinsicHash?: string
+  from: string
+  to: string
+  amount: bigint
+  fee?: bigint
+}
+
+function getTransferEvents(ctx: ProcessorContext<Store>): TransferEvent[] {
+  // Filters and decodes the arriving events
+  let transfers: TransferEvent[] = []
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (event.name == events.balances.transfer.name) {
+        let rec: {from: string; to: string; amount: bigint}
+        if (events.balances.transfer.v21.is(event)) {
+          let [from, to, amount] = events.balances.transfer.v21.decode(event)
+          rec = {from, to, amount}
+        }
+        else if (events.balances.transfer.v10400.is(event)) {
+          let {from, to, amount} = events.balances.transfer.v10400.decode(event)
+          rec = {from, to, amount}
+        }
+        // else if (events.balances.transfer.v9130.is(event)) {
+        //   rec = events.balances.transfer.v9130.decode(event)
+        // }
+        else {
+          throw new Error('Unsupported spec')
+        }
+        // @ts-ignore
+        assert(block.header.timestamp, `Got an undefined timestamp at block ${block.header.height}`)
+        transfers.push({
+          id: event.id,
+          blockNumber: block.header.height,
+          // @ts-ignore
+          timestamp: new Date(block.header.timestamp),
+          // extrinsicHash: event.extrinsic?.hash,
+          from: ss58.codec('kilt').encode(rec.from),
+          to: ss58.codec('kilt').encode(rec.to),
+          amount: rec.amount,
+          // fee: event.extrinsic?.fee || 0n,
+        })
+      }
+    }
+  }
+  return transfers
+}
+
+async function createAccounts(ctx: ProcessorContext<Store>, transferEvents: TransferEvent[]): Promise<Map<string,Account>> {
+  const accountIds = new Set<string>()
+  for (let t of transferEvents) {
+    accountIds.add(t.from)
+    accountIds.add(t.to)
+  }
+
+  const accounts = await ctx.store.findBy(Account, {id: In([...accountIds])}).then((accounts) => {
+    return new Map(accounts.map((a) => [a.id, a]))
+  })
+
+  for (let t of transferEvents) {
+    updateAccounts(t.from)
+    updateAccounts(t.to)
+  }
+
+  function updateAccounts(id: string): void {
+    const acc = accounts.get(id)
+    if (acc == null) {
+      accounts.set(id, new Account({id}))
+    }
+  }
+
+  return accounts
+}
+
+function createTransfers(transferEvents: TransferEvent[], accounts: Map<string, Account>): Transfer[] {
+  let transfers: Transfer[] = []
+  for (let t of transferEvents) {
+    let {id, blockNumber, timestamp, extrinsicHash, amount, fee} = t
+    let from = accounts.get(t.from)
+    let to = accounts.get(t.to)
+    transfers.push(new Transfer({
+      id,
+      blockNumber,
+      timestamp,
+      // extrinsicHash,
+      from,
+      to,
+      amount,
+      // fee,
+    }))
+  }
+  return transfers
+}

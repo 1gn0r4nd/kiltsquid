@@ -1,7 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
-import {Extrinsic} from "./_extrinsic"
 
 @Entity_()
 export class Transfer {
@@ -21,21 +20,11 @@ export class Transfer {
     to!: Account
 
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    value!: bigint
-
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    fee!: bigint
+    amount!: bigint
 
     @Index_()
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    blockNumber!: bigint
-
-    @Column_("jsonb", {transformer: {to: obj => obj.toJSON(), from: obj => obj == null ? undefined : new Extrinsic(undefined, obj)}, nullable: false})
-    extrinsic!: Extrinsic
-
-    @Index_()
-    @Column_("text", {nullable: true})
-    extrinsicHash!: string | undefined | null
+    @Column_("int4", {nullable: false})
+    blockNumber!: number
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})

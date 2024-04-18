@@ -12,12 +12,6 @@ export class Account {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    balance!: bigint
-
-    @Column_("int4", {nullable: false})
-    nonce!: number
-
     @OneToMany_(() => Transfer, e => e.from)
     outgoingTransfers!: Transfer[]
 

@@ -6,7 +6,7 @@ export class Extrinsic {
     private _index!: number
     private _hash!: string
     private _method!: string
-    private _blockNumber!: bigint
+    private _blockNumber!: number
 
     constructor(props?: Partial<Omit<Extrinsic, 'toJSON'>>, json?: any) {
         Object.assign(this, props)
@@ -15,7 +15,7 @@ export class Extrinsic {
             this._index = marshal.int.fromJSON(json.index)
             this._hash = marshal.string.fromJSON(json.hash)
             this._method = marshal.string.fromJSON(json.method)
-            this._blockNumber = marshal.bigint.fromJSON(json.blockNumber)
+            this._blockNumber = marshal.int.fromJSON(json.blockNumber)
         }
     }
 
@@ -55,12 +55,12 @@ export class Extrinsic {
         this._method = value
     }
 
-    get blockNumber(): bigint {
+    get blockNumber(): number {
         assert(this._blockNumber != null, 'uninitialized access')
         return this._blockNumber
     }
 
-    set blockNumber(value: bigint) {
+    set blockNumber(value: number) {
         this._blockNumber = value
     }
 
@@ -70,7 +70,7 @@ export class Extrinsic {
             index: this.index,
             hash: this.hash,
             method: this.method,
-            blockNumber: marshal.bigint.toJSON(this.blockNumber),
+            blockNumber: this.blockNumber,
         }
     }
 }

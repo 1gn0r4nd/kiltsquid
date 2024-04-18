@@ -8,7 +8,7 @@ export class DIDCreation {
     private _submitter!: string
     private _owner!: string
     private _publicKey!: string
-    private _blockNumber!: bigint
+    private _blockNumber!: number
     private _extrinsic!: Extrinsic
     private _timestamp!: Date
 
@@ -20,7 +20,7 @@ export class DIDCreation {
             this._submitter = marshal.string.fromJSON(json.submitter)
             this._owner = marshal.string.fromJSON(json.owner)
             this._publicKey = marshal.string.fromJSON(json.publicKey)
-            this._blockNumber = marshal.bigint.fromJSON(json.blockNumber)
+            this._blockNumber = marshal.int.fromJSON(json.blockNumber)
             this._extrinsic = new Extrinsic(undefined, marshal.nonNull(json.extrinsic))
             this._timestamp = marshal.datetime.fromJSON(json.timestamp)
         }
@@ -71,12 +71,12 @@ export class DIDCreation {
         this._publicKey = value
     }
 
-    get blockNumber(): bigint {
+    get blockNumber(): number {
         assert(this._blockNumber != null, 'uninitialized access')
         return this._blockNumber
     }
 
-    set blockNumber(value: bigint) {
+    set blockNumber(value: number) {
         this._blockNumber = value
     }
 
@@ -105,7 +105,7 @@ export class DIDCreation {
             submitter: this.submitter,
             owner: this.owner,
             publicKey: this.publicKey,
-            blockNumber: marshal.bigint.toJSON(this.blockNumber),
+            blockNumber: this.blockNumber,
             extrinsic: this.extrinsic.toJSON(),
             timestamp: marshal.datetime.toJSON(this.timestamp),
         }

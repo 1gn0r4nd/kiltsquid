@@ -3,13 +3,12 @@ type Extrinsic {
   index: Int!
   hash: String!
   method: String!
-  blockNumber: BigInt!
+  blockNumber: Int!
 }
 
 type Account @entity {
   id: ID! #Account address
-  balance: BigInt!
-  nonce: Int! #the number of transactions sent from the accounts address
+  # nonce: Int! #the number of transactions sent from the accounts address
   outgoingTransfers: [Transfer!] @derivedFrom(field: "from")
   incomingTransfers: [Transfer!] @derivedFrom(field: "to")
   didCreations: [DIDCreation!] @derivedFrom(field: "owner")
@@ -20,10 +19,7 @@ type Transfer @entity {
   from: Account! @index # TODO relation(name: "OutgoingTransfers")
   to: Account! @index   # TODO relation(name: "IncomingTransfers")
   amount: BigInt!
-  fee: BigInt! # fee is calculated at the best effort and may be zero for some old extrinsics
-  blockNumber: BigInt! @index
-  extrinsic: Extrinsic!
-  extrinsicHash: String @index
+  blockNumber: Int! @index
   timestamp: DateTime! @index
 }
 
@@ -33,7 +29,7 @@ type DIDCreation {
   submitter: String!
   owner: String!
   publicKey: String!
-  blockNumber: BigInt!
+  blockNumber: Int!
   extrinsic: Extrinsic!
   timestamp: DateTime!
 }
