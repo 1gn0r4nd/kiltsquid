@@ -1,9 +1,43 @@
-type Extrinsic {
+"""
+   A Block is, its hash, and the timestamp and extrinsics that happened in the block
+   https://docs.subsquid.io/sdk/reference/processors/substrate-batch/context-interfaces/
+"""
+type Block @entity {
+  id: ID!
+  hash: String!
+  timestamp: DateTime! @index
+  extrinsics: [Extrinsic!] @derivedFrom(field: "block")
+}
+"""
+   Extrinsic
+   TODO: I need to still process batchcalls which probably dont have a call
+   https://docs.subsquid.io/sdk/reference/processors/substrate-batch/field-selection/#extrinsics
+"""
+type Extrinsic @entity {
   id: ID!
   index: Int!
   hash: String!
-  method: String!
-  blockNumber: Int!
+  block: Block!
+  fee: BigInt!
+  tip: BigInt!
+  calls: [Call!] @derivedFrom(field: "extrinsic")
+}
+
+type Call @entity {
+  id: ID!
+  name: String! @index
+  block: Block!
+  extrinsic: Extrinsic!
+  args: JSON!
+}
+
+"""
+    Testing out something
+"""
+type Arguments @jsonField {
+  source: String
+  dest: String
+  value: String!
 }
 
 type Account @entity {
@@ -11,25 +45,27 @@ type Account @entity {
   # nonce: Int! #the number of transactions sent from the accounts address
   outgoingTransfers: [Transfer!] @derivedFrom(field: "from")
   incomingTransfers: [Transfer!] @derivedFrom(field: "to")
-  didCreations: [DIDCreation!] @derivedFrom(field: "owner")
+  # didCreations: [DIDCreation!] @derivedFrom(field: "owner")
 }
 
 type Transfer @entity {
-  id: ID!
+  id: ID! #REMOVE ME?
   from: Account! @index # TODO relation(name: "OutgoingTransfers")
   to: Account! @index   # TODO relation(name: "IncomingTransfers")
   amount: BigInt!
   blockNumber: Int! @index
   timestamp: DateTime! @index
+  fee: BigInt
 }
 
-type DIDCreation {
+type DID @entity {
   id: ID!
+  blockNumber: Int!
   did: String!
+  event: String!
   submitter: String!
   owner: String!
   publicKey: String!
-  blockNumber: Int!
   extrinsic: Extrinsic!
   timestamp: DateTime!
 }

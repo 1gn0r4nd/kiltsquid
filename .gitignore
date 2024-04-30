@@ -4,3 +4,9 @@ package-lock.json
 
 .env
 *.sh
+lib/model/generated/*
+lib/api.js
+lib/types/*
+src/model/generated/*
+src/types/*
+db

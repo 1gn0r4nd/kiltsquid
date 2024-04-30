@@ -9,13 +9,22 @@ import {TypeormDatabase, Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 // import * as usdtAbi from './abi/usdt'
 import {processor, ProcessorContext} from './processor'
-import {Account, Transfer} from './model'
+import {Block, Extrinsic, Account, Transfer, Call} from './model'
 import {events} from './types'
-
 
 const db = new TypeormDatabase({supportHotBlocks: true})
 
-processor.run(db, async ctx => {
+processor.run(db, async (ctx) => {
+  //Store blocks
+  //ctx = of type :DataHandlerContext
+  // await test(ctx);
+  // let blocks: Block[] = createBlocks(ctx);
+  // await ctx.store.insert(blocks)
+  await createAndStoreBlocks(ctx);
+  //Store extrinsics
+  await createAndStoreExtrinsics(ctx);
+
+  // transfer events
   let transferEvents: TransferEvent[] = getTransferEvents(ctx)
 
   let accounts: Map<string, Account> = await createAccounts(ctx, transferEvents)
@@ -23,7 +32,98 @@ processor.run(db, async ctx => {
 
   await ctx.store.upsert([...accounts.values()])
   await ctx.store.insert(transfers)
+
 })
+async function createAndStoreBlocks(ctx: ProcessorContext<Store>){
+  let blocks: Block[] = []
+  for (let block of ctx.blocks) {
+    blocks.push(new Block(
+      {
+        id: block.header.height.toString(),
+        hash: block.header.hash,
+        // @ts-ignore
+        timestamp: new Date(block.header.timestamp),
+      })
+    );
+  }
+  await ctx.store.insert(blocks)
+}
+
+//https://docs.subsquid.io/sdk/reference/processors/substrate-batch/field-selection/#extrinsics
+async function createAndStoreExtrinsics(ctx: ProcessorContext<Store>){
+  for (let block of ctx.blocks) {
+    for (let extrinsic of block.extrinsics) {
+      const blocks = await ctx.store.findBy(Block, { id: block.header.height.toString() });
+      const b = blocks[0]; // Get the first block from the results
+      if (!b) {
+        throw new Error(`Block not found for height: ${block.header.height}`);
+      }
+      let calls: Call[] = []
+      let e = new Extrinsic(
+        {
+          id: `${b.id}-${extrinsic.index}`,
+          block: b,
+          index: extrinsic.index,
+          // @ts-ignore
+          hash: extrinsic.hash,
+          // @ts-ignore
+          timestamp: new Date(block.header.timestamp),
+          // @ts-ignore
+          fee: extrinsic.fee || 0n,
+          // @ts-ignore
+          tip: extrinsic.tip || 0n,
+          // signature
+        });
+      await ctx.store.insert([e]);
+      const extc = await ctx.store.findBy(Extrinsic, { id: `${b.id}-${extrinsic.index}` });
+      if(extrinsic.call){
+        ctx.log.info(extrinsic.call, `Call:`);
+        calls.push(new Call(
+          {
+            id: `${b.id}-${extrinsic.index}-${extrinsic.call.id}`,
+            name: extrinsic.call.name,
+            args: extrinsic.call.args,
+            extrinsic: extc[0],
+            block: b
+          })
+        );
+      } else {
+        for (let call of extrinsic.subcalls) {
+          ctx.log.info(call, `Subcall - call:`);
+          calls.push(new Call(
+            {
+              id: `${b.id}-${extrinsic.index}-${call.id}`,
+              name: call.name,
+              args: call.args,
+              extrinsic: extc[0],
+              block: b
+            })
+          );
+        }
+      }
+      ctx.store.insert(calls);
+    }
+  }
+}
+async function test(ctx: ProcessorContext<Store>){
+  for (let block of ctx.blocks) {
+    // for (let event of block.events) {
+    //   // filter and process events
+    // }
+    for (let call of block.calls) {
+      ctx.log.info("#########");
+      // @ts-ignore
+      ctx.log.info(call, `Call:`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    // for (let extrinsic of block.extrinsics) {
+    //   // ctx.log.info("#########");
+    //   // // @ts-ignore
+    //   // ctx.log.info(extrinsic.call?.name, `Extrinsic:`);
+    //   // await new Promise(r => setTimeout(r, 2000));
+    // }
+  }
+}
 
 interface TransferEvent {
   id: string
@@ -33,7 +133,7 @@ interface TransferEvent {
   from: string
   to: string
   amount: bigint
-  fee?: bigint
+  fee: bigint
 }
 
 function getTransferEvents(ctx: ProcessorContext<Store>): TransferEvent[] {
@@ -64,11 +164,13 @@ function getTransferEvents(ctx: ProcessorContext<Store>): TransferEvent[] {
           blockNumber: block.header.height,
           // @ts-ignore
           timestamp: new Date(block.header.timestamp),
-          // extrinsicHash: event.extrinsic?.hash,
+          // @ts-ignore
+          extrinsicHash: event.extrinsic?.hash,
           from: ss58.codec('kilt').encode(rec.from),
           to: ss58.codec('kilt').encode(rec.to),
           amount: rec.amount,
-          // fee: event.extrinsic?.fee || 0n,
+          // @ts-ignore
+          fee: event.extrinsic?.fee || 0n,
         })
       }
     }
@@ -121,3 +223,4 @@ function createTransfers(transferEvents: TransferEvent[], accounts: Map<string, 
   }
   return transfers
 }
+

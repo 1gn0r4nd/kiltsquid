@@ -30,16 +30,21 @@ export const processor = new SubstrateBatchProcessor()
     extrinsic: true
   })
   .setFields({
-    extrinsic: {
-      hash: true,
-      fee: true
-    },
     block: {
       timestamp: true
+    },
+    extrinsic: {
+      hash: true,
+      fee: true,
+      tip: true
     },
     event: {
       args: true
     },
+    call: {
+      name: true,
+      args: true
+    }
   })
 // Uncomment to disable RPC ingestion and drastically reduce no of RPC calls
 //.useArchiveOnly()

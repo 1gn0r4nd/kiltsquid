@@ -5,5 +5,15 @@ services:
     environment:
       POSTGRES_DB: "${DB_NAME}"
       POSTGRES_PASSWORD: postgres
+  app:
+    image: node:lts-bookworm-slim
+    container_name: kiltsquid-dev
+      #command: bash -c "cd /app && node -r dotenv/config lib/api.js"
+    command: bash
     ports:
-      - "${DB_PORT}:5432"
+      - "107.181.244.51:80:4350"
+    volumes:
+      - ./:/app
+    tty: true  
+    depends_on:
+      - db

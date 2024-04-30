@@ -4,10 +4,25 @@
   "pallets": {
     "Balances": {
       "events": [
-        "Transfer"
+        "Transfer",
+        "BalanceSet",
+        "Reserved",
+        "Unreserved",
+        "Deposit",
+        "Withdraw",
+        "Minted",
+        "Burned",
+        "Restored",
+        "Upgraded",
+        "Issued",
+        "Locked",
+        "Unlocked",
+        "Thawed",
       ],
-      "calls": [],
-      "storage": [],
+      "calls": [
+      ],
+      "storage": [
+      ],
       "constants": []
     },
     "Did": {
@@ -24,10 +39,29 @@
       ]
     },
     "Timestamp": {
+      "calls": [
+        "set"
+      ]
+    },
+    "ParachainSystem": {
+      "events": [
+        "ValidationFunctionApplied"
+      ],
+      "calls": [
+        "set"
+      ]
     },
     "Attestation": {
       "events": [
 
+      ]
+    },
+    "Web3Names": {
+      "events": [
+        "Web3NameClaimed",
+        "Web3NameReleased",
+        "Web3NameBanned",
+        "Web3NameUnbanned"
       ]
     }
   }
