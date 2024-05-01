@@ -4,22 +4,30 @@
   "pallets": {
     "Balances": {
       "events": [
+        "Endowed",
+        "DustLost",
         "Transfer",
         "BalanceSet",
         "Reserved",
         "Unreserved",
+        "ReserveRepatriated",
         "Deposit",
         "Withdraw",
+        "Slashed",
         "Minted",
         "Burned",
+        "Suspended",
         "Restored",
         "Upgraded",
         "Issued",
+        "Rescinded",
         "Locked",
         "Unlocked",
+        "Frozen",
         "Thawed",
       ],
       "calls": [
+        "upgrade_accounts"
       ],
       "storage": [
       ],
@@ -39,21 +47,31 @@
       ]
     },
     "Timestamp": {
-      "calls": [
-        "set"
-      ]
+      "calls": true,
+      "events": true
     },
     "ParachainSystem": {
       "events": [
-        "ValidationFunctionApplied"
+        "ValidationFunctionStored",
+        "ValidationFunctionApplied",
+        "ValidationFunctionDiscarded",
+        "UpgradeAuthorized",
+        "DownwardMessagesReceived",
+        "UpwardMessageSent"
       ],
       "calls": [
-        "set"
+        "sudo_send_upward_message",
+        "authorize_upgrade",
+        "enact_authorized_upgrade"
       ]
     },
     "Attestation": {
+      "calls": [
+      ],
       "events": [
-
+        "AttestationRevoked",
+        "AttestationRemoved",
+        "DepositReclaimed"
       ]
     },
     "Web3Names": {

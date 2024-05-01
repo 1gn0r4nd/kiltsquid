@@ -1,7 +1,7 @@
 
 npm install
 
-docker run --rm -e DB_HOST=host.docker.internal --env-file=.env my-squid npx squid-typeorm-migration apply
+#docker run --rm -e DB_HOST=host.docker.internal --env-file=.env my-squid npx squid-typeorm-migration apply
 
 #Edit typegen.json
 #https://docs.subsquid.io/sdk/reference/schema-file/entities/

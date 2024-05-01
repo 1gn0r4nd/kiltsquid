@@ -7,6 +7,8 @@ package-lock.json
 lib/model/generated/*
 lib/api.js
 lib/types/*
+lib/main.js
+lib/processor.js
 src/model/generated/*
 src/types/*
 db
